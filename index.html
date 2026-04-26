@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Markly Pro">
+<meta name="theme-color" content="#2b6bc8">
+<meta name="description" content="Professional watermark studio for images, videos and PDFs. Designed by Nand Kishor Chaudhary.">
+<title>Markly Pro — Watermark Studio</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root {
+  --ink: #0f0e0d;
+  --paper: #f5f0e8;
+  --cream: #ede7d9;
+  --accent: #c8472b;
+  --accent2: #2b6bc8;
+  --muted: #8a8070;
+  --border: #cec5b5;
+  --panel: #faf7f2;
+  --green: #16a34a;
+  --vid: #7c3aed;
+  --pdf: #dc2626;
+  --img: #0369a1;
+  --fb: #1877f2;
+  --ig: #e1306c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Instrument Sans', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999;
+}
+
+/* ── INSTALL BANNER ── */
+#installBanner {
+  display: none; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #1a3a6e, #2b6bc8);
+  color: white; padding: 9px 16px; flex-shrink: 0;
+  font-size: 12px; border-bottom: 1px solid #1e55a8;
+}
+#installBanner.visible { display: flex; }
+#installBanner .ib-icon { font-size: 18px; }
+#installBanner .ib-text { flex: 1; line-height: 1.4; }
+#installBanner .ib-text strong { display: block; font-size: 12.5px; }
+#installBanner .ib-text span { font-size: 10.5px; opacity: 0.8; }
+.ib-install-btn {
+  background: white; color: var(--accent2); border: none; border-radius: 20px;
+  padding: 6px 14px; font-size: 11px; font-weight: 700; cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif; white-space: nowrap; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.ib-install-btn:hover { background: var(--cream); }
+.ib-dismiss { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 16px; padding: 2px 4px; flex-shrink: 0; }
+.ib-dismiss:hover { color: white; }
+
+/* iOS install hint */
+#iosHint {
+  display: none; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #1a3a6e, #2b6bc8);
+  color: white; padding: 9px 16px; flex-shrink: 0;
+  font-size: 11px; border-bottom: 1px solid #1e55a8;
+}
+#iosHint.visible { display: flex; }
+#iosHint .ih-text { flex: 1; line-height: 1.5; }
+#iosHint .ih-dismiss { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 16px; padding: 0 4px; }
+
+/* HEADER */
+header {
+  border-bottom: 1.5px solid var(--border);
+  padding: 9px 16px;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); flex-shrink: 0;
+}
+.logo-text { font-family: 'DM Serif Display', serif; font-size: 19px; }
+.logo-text em { color: var(--accent); font-style: italic; }
+.logo-badge { font-family: 'DM Mono', monospace; font-size: 8px; background: var(--accent2); color: white; padding: 2px 5px; border-radius: 4px; letter-spacing: 0.06em; vertical-align: middle; margin-left: 3px; }
+.tagline { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; }
+.header-spacer { flex: 1; }
+.header-pills { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.hpill { font-family: 'DM Mono', monospace; font-size: 9.5px; padding: 2px 8px; background: var(--cream); border-radius: 20px; border: 1px solid var(--border); }
+.hpill strong { color: var(--accent2); }
+.hpill.vid-pill strong { color: var(--vid); }
+.hpill.pdf-pill strong { color: var(--pdf); }
+
+/* Install header button */
+.install-hdr-btn {
+  display: none; align-items: center; gap: 5px;
+  background: var(--accent2); color: white; border: none; border-radius: 6px;
+  padding: 5px 11px; font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif; transition: all 0.15s; flex-shrink: 0;
+}
+.install-hdr-btn:hover { background: #1e55a8; }
+.install-hdr-btn.visible { display: flex; }
+
+/* WORKSPACE */
+.workspace {
+  display: grid;
+  grid-template-columns: 270px 1fr 1fr;
+  flex: 1; overflow: hidden;
+}
+
+/* SIDEBAR */
+.sidebar {
+  border-right: 1.5px solid var(--border);
+  padding: 14px 13px;
+  background: var(--panel);
+  display: flex; flex-direction: column; gap: 15px;
+  overflow-y: auto;
+}
+.section-label {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 7px; display: flex; align-items: center; gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.upload-zone {
+  border: 1.5px dashed var(--border); border-radius: 7px;
+  padding: 13px 10px; text-align: center; cursor: pointer;
+  transition: all 0.18s; background: var(--cream); display: block;
+}
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: #fdf0ed; }
+.upload-zone input { display: none; }
+.upload-zone .icon { font-size: 20px; margin-bottom: 4px; display: block; }
+.upload-zone p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.upload-zone strong { color: var(--ink); }
+
+.logo-preview-wrap { display: none; align-items: center; gap: 8px; padding: 7px 9px; background: var(--cream); border-radius: 6px; border: 1px solid var(--border); }
+.logo-preview-wrap.visible { display: flex; }
+.logo-preview-wrap img { width: 30px; height: 30px; object-fit: contain; border-radius: 4px; background: white; padding: 2px; }
+.logo-name { font-size: 10px; color: var(--ink); font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-clear { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; }
+.btn-clear:hover { color: var(--accent); }
+
+/* WM tabs */
+.wm-tabs { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+.wm-tab { flex: 1; padding: 6px; font-size: 11px; font-weight: 600; cursor: pointer; background: var(--cream); border: none; color: var(--muted); transition: all 0.15s; font-family: 'Instrument Sans', sans-serif; }
+.wm-tab.active { background: var(--accent2); color: white; }
+
+.text-wm-wrap { display: none; flex-direction: column; gap: 8px; }
+.text-wm-wrap.visible { display: flex; }
+.text-wm-input { width: 100%; border: 1.5px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 12px; font-family: 'Instrument Sans', sans-serif; background: var(--cream); color: var(--ink); outline: none; }
+.text-wm-input:focus { border-color: var(--accent2); }
+.text-color-row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.text-color-row label { font-weight: 500; color: var(--ink); }
+.text-color-row input[type=color] { width: 28px; height: 22px; border: 1.5px solid var(--border); border-radius: 4px; cursor: pointer; padding: 0; background: none; }
+
+/* Sliders */
+.control-group { display: flex; flex-direction: column; gap: 9px; }
+.control-row { display: flex; align-items: center; gap: 8px; }
+.control-row label { font-size: 11px; color: var(--ink); font-weight: 500; flex-shrink: 0; min-width: 56px; }
+input[type=range] {
+  -webkit-appearance: none; flex: 1; height: 3px;
+  background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.range-val { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); min-width: 30px; text-align: right; }
+
+/* Position grid */
+.pos-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; }
+.pos-btn {
+  aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 5px;
+  background: var(--cream); cursor: pointer; transition: all 0.13s;
+  display: flex; align-items: center; justify-content: center;
+}
+.pos-btn:hover { border-color: var(--accent2); background: #edf3fb; }
+.pos-btn.active { border-color: var(--accent2); background: var(--accent2); }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
+.pos-btn.active .dot { background: white; }
+
+/* Download */
+.dl-btn {
+  width: 100%; border: none; border-radius: 7px; padding: 10px;
+  font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; background: var(--accent2); color: white;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.dl-btn:hover { background: #1e55a8; transform: translateY(-1px); }
+.dl-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+.progress-wrap { display: none; margin-top: 8px; }
+.progress-bar-bg { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent2); border-radius: 2px; width: 0%; transition: width 0.25s; }
+.progress-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 4px; text-align: center; }
+
+/* Video warning */
+.vid-warning {
+  display: none; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px;
+  padding: 7px 10px; font-size: 10px; color: #92400e; line-height: 1.5;
+}
+.vid-warning.visible { display: block; }
+
+/* ── CREDITS ── */
+.credits-block {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: auto;
+}
+.credits-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 12px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.credits-name em { color: var(--accent); font-style: italic; }
+.credits-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.social-links { display: flex; gap: 6px; }
+.social-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 6px; border: 1.5px solid;
+  font-size: 10.5px; font-weight: 600; text-decoration: none;
+  font-family: 'Instrument Sans', sans-serif;
+  transition: all 0.15s; cursor: pointer; flex: 1; justify-content: center;
+}
+.social-btn.fb { border-color: var(--fb); color: var(--fb); background: #f0f6ff; }
+.social-btn.fb:hover { background: var(--fb); color: white; }
+.social-btn.ig { border-color: var(--ig); color: var(--ig); background: #fff0f5; }
+.social-btn.ig:hover { background: var(--ig); color: white; }
+.social-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+/* PREVIEW PANEL */
+.preview-panel {
+  border-right: 1.5px solid var(--border);
+  display: flex; flex-direction: column;
+  background: #181818; overflow: hidden;
+}
+.preview-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; background: #111;
+  border-bottom: 1px solid #2a2a2a; flex-shrink: 0; gap: 8px;
+}
+.preview-topbar-label { font-family: 'DM Mono', monospace; font-size: 9px; color: #666; letter-spacing: 0.1em; text-transform: uppercase; }
+.live-badge { font-family: 'DM Mono', monospace; font-size: 9px; color: #4ade80; background: #4ade8011; padding: 3px 8px; border-radius: 10px; border: 1px solid #4ade8033; }
+.preview-topbar-right { display: flex; gap: 5px; align-items: center; margin-left: auto; }
+.preview-mode-btn { font-family: 'DM Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: #666; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.preview-mode-btn.active { border-color: var(--accent2); color: var(--accent2); background: #0d1f3c; }
+
+.preview-body {
+  flex: 1; display: flex; overflow: hidden; position: relative;
+}
+.preview-side {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px; overflow: hidden; position: relative;
+}
+.preview-side-label {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  font-family: 'DM Mono', monospace; font-size: 8px; color: #555;
+  background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 8px;
+  letter-spacing: 0.08em; text-transform: uppercase; z-index: 2; white-space: nowrap;
+}
+.preview-divider { width: 1px; background: #2a2a2a; flex-shrink: 0; }
+.preview-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #444; text-align: center; }
+.preview-empty .pe-icon { font-size: 28px; opacity: 0.35; }
+.preview-empty p { font-size: 11px; line-height: 1.6; color: #555; }
+
+#previewCanvas, #previewCanvasWm { max-width: 100%; max-height: 100%; border-radius: 3px; box-shadow: 0 6px 30px rgba(0,0,0,0.55); display: none; }
+.preview-video-wrap {
+  position: relative; display: none;
+  max-width: 100%; max-height: 100%;
+  justify-content: center; align-items: center;
+}
+.preview-video-wrap video { display: block; max-width: 100%; max-height: 100%; border-radius: 3px; }
+.video-wm-overlay { position: absolute; pointer-events: none; top: 0; left: 0; }
+.preview-photo-name {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  font-family: 'DM Mono', monospace; font-size: 8px; color: #888;
+  background: rgba(0,0,0,0.55); padding: 2px 8px; border-radius: 8px;
+  white-space: nowrap; display: none; max-width: 90%; overflow: hidden; text-overflow: ellipsis; z-index: 3;
+}
+
+/* GRID PANEL */
+.grid-panel { display: flex; flex-direction: column; overflow: hidden; background: var(--paper); }
+.grid-toolbar {
+  display: flex; align-items: center; gap: 4px;
+  padding: 7px 9px; border-bottom: 1.5px solid var(--border);
+  background: var(--panel); flex-shrink: 0; flex-wrap: wrap;
+}
+.tb-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1.5px solid var(--border); border-radius: 6px;
+  padding: 5px 8px; font-family: 'Instrument Sans', sans-serif;
+  font-size: 10.5px; font-weight: 600; cursor: pointer;
+  background: white; color: var(--ink); transition: all 0.14s; white-space: nowrap;
+}
+.tb-btn:hover { border-color: var(--accent2); color: var(--accent2); background: #f0f5fd; }
+.tb-btn.danger:hover { border-color: var(--accent); color: var(--accent); background: #fdf2f0; }
+.tb-btn input { display: none; }
+.tb-sep { width: 1px; height: 16px; background: var(--border); flex-shrink: 0; }
+.tb-count { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-left: auto; }
+.tb-count strong { color: var(--accent2); }
+
+.photo-scroll { flex: 1; overflow-y: auto; padding: 10px; }
+.drop-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; min-height: 180px; border: 2px dashed var(--border); border-radius: 10px;
+  cursor: pointer; transition: all 0.18s; background: var(--panel);
+  color: var(--muted); text-align: center; gap: 7px; padding: 20px;
+}
+.drop-empty:hover, .drop-empty.drag-over { border-color: var(--accent2); background: #f2f6fd; }
+.drop-empty .de-icon { font-size: 30px; opacity: 0.45; }
+.drop-empty h3 { font-family: 'DM Serif Display', serif; font-size: 15px; color: var(--ink); }
+.drop-empty p { font-size: 11px; line-height: 1.6; }
+.drop-chips { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.drop-chip { font-family: 'DM Mono', monospace; font-size: 8.5px; padding: 2px 6px; border-radius: 10px; border: 1px solid var(--border); color: var(--muted); }
+
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 6px; }
+.photo-item {
+  position: relative; aspect-ratio: 4/3; border-radius: 5px;
+  overflow: hidden; border: 2px solid transparent;
+  background: var(--cream); cursor: pointer; transition: border-color 0.13s, transform 0.1s;
+}
+.photo-item:hover { transform: scale(1.04); z-index: 2; }
+.photo-item.selected { border-color: var(--accent2); box-shadow: 0 0 0 2px #2b6bc844; }
+.photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-item .rm {
+  position: absolute; top: 2px; right: 2px;
+  background: rgba(0,0,0,0.65); color: white; border: none; border-radius: 50%;
+  width: 16px; height: 16px; cursor: pointer; font-size: 8px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.13s;
+}
+.photo-item:hover .rm { opacity: 1; }
+.sel-dot { position: absolute; bottom: 3px; left: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent2); display: none; }
+.photo-item.selected .sel-dot { display: block; }
+.type-badge { position: absolute; top: 2px; left: 2px; font-family: 'DM Mono', monospace; font-size: 7.5px; font-weight: 500; padding: 1px 4px; border-radius: 3px; color: white; }
+.type-badge.img { background: var(--img); }
+.type-badge.vid { background: var(--vid); }
+.type-badge.pdf { background: var(--pdf); }
+.pdf-thumb { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff5f5; gap: 2px; }
+.pdf-thumb span { font-size: 18px; }
+.pdf-thumb p { font-size: 8px; color: var(--pdf); font-weight: 600; font-family: 'DM Mono', monospace; }
+.vid-thumb { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f5f0ff; gap: 2px; }
+.vid-thumb span { font-size: 18px; }
+.vid-thumb p { font-size: 8px; color: var(--vid); font-weight: 600; font-family: 'DM Mono', monospace; }
+
+/* ── INSTALL SUCCESS TOAST ── */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #1a2a1a; color: #4ade80; border: 1px solid #16a34a; border-radius: 10px;
+  padding: 10px 20px; font-family: 'DM Mono', monospace; font-size: 11px;
+  z-index: 10000; transition: transform 0.3s ease; white-space: nowrap;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- Install Banner (Android/Desktop) -->
+<div id="installBanner">
+  <span class="ib-icon">📲</span>
+  <div class="ib-text">
+    <strong>Install Markly Pro</strong>
+    <span>Works offline · No app store needed</span>
+  </div>
+  <button class="ib-install-btn" id="installBtn">Install App</button>
+  <button class="ib-dismiss" id="dismissBanner" title="Dismiss">✕</button>
+</div>
+
+<!-- iOS Install Hint -->
+<div id="iosHint">
+  <span style="font-size:16px;">📲</span>
+  <div class="ih-text">
+    <strong>Install on iPhone/iPad:</strong> tap <strong>Share ↑</strong> then <strong>"Add to Home Screen"</strong> to use Markly Pro as an app.
+  </div>
+  <button class="ih-dismiss" id="dismissIos">✕</button>
+</div>
+
+<header>
+  <span class="logo-text">Mark<em>ly</em> <span class="logo-badge">PRO</span></span>
+  <span class="tagline">— Watermark Studio</span>
+  <div class="header-spacer"></div>
+  <div class="header-pills">
+    <div class="hpill" id="hImg">🖼️ <strong>0</strong></div>
+    <div class="hpill vid-pill" id="hVid">🎬 <strong>0</strong></div>
+    <div class="hpill pdf-pill" id="hPdf">📄 <strong>0</strong></div>
+  </div>
+  <button class="install-hdr-btn" id="installHdrBtn">📲 Install</button>
+</header>
+
+<div class="workspace">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div>
+      <div class="section-label">Watermark Type</div>
+      <div class="wm-tabs">
+        <button class="wm-tab active" id="tabLogo" onclick="switchWmTab('logo')">🏷️ Logo</button>
+        <button class="wm-tab" id="tabText" onclick="switchWmTab('text')">🔤 Text</button>
+      </div>
+      <div id="logoWmSection">
+        <label class="upload-zone" id="logoZone">
+          <input type="file" id="logoInput" accept="image/*">
+          <span class="icon">🏷️</span>
+          <p><strong>Click or drag logo here</strong><br>PNG transparent recommended</p>
+        </label>
+        <div class="logo-preview-wrap" id="logoPreview">
+          <img id="logoThumb" src="" alt="logo">
+          <span class="logo-name" id="logoFileName"></span>
+          <button class="btn-clear" id="clearLogo" title="Remove logo">✕</button>
+        </div>
+      </div>
+      <div class="text-wm-wrap" id="textWmSection">
+        <input type="text" class="text-wm-input" id="wmText" placeholder="Your watermark text…" value="© My Brand">
+        <div class="text-color-row">
+          <label>Color</label>
+          <input type="color" id="wmColor" value="#ffffff">
+          <label style="margin-left:6px;">Font</label>
+          <select id="wmFont" style="flex:1;border:1.5px solid var(--border);border-radius:5px;padding:3px 5px;font-size:10px;background:var(--cream);color:var(--ink);outline:none;">
+            <option value="'Instrument Sans', sans-serif">Instrument Sans</option>
+            <option value="'DM Mono', monospace">DM Mono</option>
+            <option value="serif">Serif</option>
+            <option value="sans-serif">Sans Serif</option>
+            <option value="cursive">Cursive</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Size & Opacity</div>
+      <div class="control-group">
+        <div class="control-row">
+          <label>Size</label>
+          <input type="range" id="sizeRange" min="3" max="60" value="20">
+          <span class="range-val" id="sizeVal">20%</span>
+        </div>
+        <div class="control-row">
+          <label>Opacity</label>
+          <input type="range" id="opacityRange" min="5" max="100" value="80">
+          <span class="range-val" id="opacityVal">80%</span>
+        </div>
+        <div class="control-row">
+          <label>Padding</label>
+          <input type="range" id="paddingRange" min="0" max="10" value="3">
+          <span class="range-val" id="paddingVal">3%</span>
+        </div>
+        <div class="control-row">
+          <label>Quality</label>
+          <input type="range" id="qualityRange" min="50" max="100" value="100">
+          <span class="range-val" id="qualityVal">100%</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Position</div>
+      <div class="pos-grid" id="posGrid">
+        <button class="pos-btn" data-pos="top-left"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="top-center"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="top-right"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="middle-left"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="center"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="middle-right"><span class="dot"></span></button>
+        <button class="pos-btn active" data-pos="bottom-right"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="bottom-center"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="bottom-left"><span class="dot"></span></button>
+      </div>
+    </div>
+
+    <div class="vid-warning" id="vidWarning">
+      ⚠️ <strong>Video note:</strong> Browser-based video watermarking works best for short clips. Processing time varies by device.
+    </div>
+
+    <div style="padding-top:6px;">
+      <button class="dl-btn" id="downloadBtn" disabled>⬇ Download All Watermarked</button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel"></div>
+      </div>
+    </div>
+
+    <!-- CREDITS -->
+    <div class="credits-block">
+      <div class="credits-name">Designed by <em>Nand Kishor Chaudhary</em></div>
+      <div class="credits-sub">Markly Pro · Watermark Studio</div>
+      <div class="social-links">
+        <a class="social-btn fb" href="https://www.facebook.com/nandchy" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          Facebook
+        </a>
+        <a class="social-btn ig" href="https://www.instagram.com/nandk_nk" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          Instagram
+        </a>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- PREVIEW PANEL -->
+  <div class="preview-panel">
+    <div class="preview-topbar">
+      <span class="preview-topbar-label">Preview</span>
+      <span class="live-badge">● LIVE</span>
+      <div class="preview-topbar-right">
+        <button class="preview-mode-btn active" id="btnSideBySide" onclick="setPreviewMode('side')">Side by Side</button>
+        <button class="preview-mode-btn" id="btnSingle" onclick="setPreviewMode('single')">Watermarked</button>
+      </div>
+    </div>
+    <div class="preview-body" id="previewBody">
+      <div class="preview-side" id="origSide">
+        <div class="preview-side-label">Original</div>
+        <div class="preview-empty" id="origEmpty">
+          <div class="pe-icon">🖼️</div>
+          <p>Select a file<br>to preview</p>
+        </div>
+        <canvas id="previewCanvas"></canvas>
+        <div class="preview-video-wrap" id="origVideoWrap">
+          <video id="origVideo" controls muted style="max-width:100%;max-height:100%;border-radius:3px;box-shadow:0 6px 30px rgba(0,0,0,0.55);"></video>
+        </div>
+      </div>
+      <div class="preview-divider" id="previewDivider"></div>
+      <div class="preview-side" id="wmSide">
+        <div class="preview-side-label">Watermarked</div>
+        <div class="preview-empty" id="wmEmpty">
+          <div class="pe-icon">✨</div>
+          <p>Watermark preview<br>appears here</p>
+        </div>
+        <canvas id="previewCanvasWm"></canvas>
+        <div class="preview-video-wrap" id="wmVideoWrap">
+          <video id="wmVideo" controls muted style="max-width:100%;max-height:100%;border-radius:3px;box-shadow:0 6px 30px rgba(0,0,0,0.55);"></video>
+          <div class="video-wm-overlay" id="videoWmOverlay">
+            <canvas id="videoWmCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="preview-photo-name" id="previewName"></div>
+    </div>
+  </div>
+
+  <!-- FILE GRID -->
+  <div class="grid-panel">
+    <div class="grid-toolbar">
+      <label class="tb-btn" title="Load images">
+        <input type="file" id="photosInput" accept="image/*" multiple>
+        🖼️ Images
+      </label>
+      <label class="tb-btn" title="Load videos">
+        <input type="file" id="videosInput" accept="video/*" multiple>
+        🎬 Videos
+      </label>
+      <label class="tb-btn" title="Load PDFs">
+        <input type="file" id="pdfsInput" accept="application/pdf" multiple>
+        📄 PDFs
+      </label>
+      <label class="tb-btn" title="Load entire folder">
+        <input type="file" id="folderInput" webkitdirectory multiple>
+        📁 Folder
+      </label>
+      <div class="tb-sep"></div>
+      <button class="tb-btn danger" id="clearAllBtn">🗑 Clear</button>
+      <div class="tb-count" id="tbCount"></div>
+    </div>
+    <div class="photo-scroll" id="photoScroll">
+      <div class="drop-empty" id="dropEmpty">
+        <div class="de-icon">📂</div>
+        <h3>Drop files here</h3>
+        <p>Images · Videos · PDFs<br>or drag &amp; drop a whole folder</p>
+        <div class="drop-chips">
+          <span class="drop-chip">JPG PNG WEBP GIF</span>
+          <span class="drop-chip">MP4 MOV WEBM</span>
+          <span class="drop-chip">PDF</span>
+        </div>
+      </div>
+      <div class="photo-grid" id="photoGrid" style="display:none;"></div>
+    </div>
+  </div>
+
+</div>
+
+<canvas id="processCanvas" style="display:none;"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PDF.js worker ──
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      console.log('SW registered:', reg.scope);
+    }).catch(err => console.log('SW error:', err));
+  });
+}
+
+// ── PWA INSTALL ──
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('visible');
+  document.getElementById('installHdrBtn').classList.add('visible');
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('visible');
+  document.getElementById('installHdrBtn').classList.remove('visible');
+  showToast('✓ Markly Pro installed!');
+});
+
+async function triggerInstall() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  if (outcome === 'accepted') {
+    document.getElementById('installBanner').classList.remove('visible');
+    document.getElementById('installHdrBtn').classList.remove('visible');
+  }
+}
+
+document.getElementById('installBtn').addEventListener('click', triggerInstall);
+document.getElementById('installHdrBtn').addEventListener('click', triggerInstall);
+document.getElementById('dismissBanner').addEventListener('click', () => {
+  document.getElementById('installBanner').classList.remove('visible');
+});
+
+// iOS detection — show manual hint
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isStandalone = window.navigator.standalone === true;
+if (isIOS && !isStandalone) {
+  document.getElementById('iosHint').classList.add('visible');
+  document.getElementById('installHdrBtn').classList.add('visible');
+  document.getElementById('installHdrBtn').onclick = () => {
+    document.getElementById('iosHint').scrollIntoView({ behavior: 'smooth' });
+  };
+}
+document.getElementById('dismissIos').addEventListener('click', () => {
+  document.getElementById('iosHint').classList.remove('visible');
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── STATE ──
+let logoImg     = null;
+let wmMode      = 'logo';
+let files       = [];
+let position    = 'bottom-right';
+let previewIdx  = null;
+let previewMode = 'side';
+
+// ── ELEMENTS ──
+const logoInput    = document.getElementById('logoInput');
+const logoZone     = document.getElementById('logoZone');
+const logoPreview  = document.getElementById('logoPreview');
+const logoThumb    = document.getElementById('logoThumb');
+const logoFileName = document.getElementById('logoFileName');
+const clearLogo    = document.getElementById('clearLogo');
+
+const photosInput  = document.getElementById('photosInput');
+const videosInput  = document.getElementById('videosInput');
+const pdfsInput    = document.getElementById('pdfsInput');
+const folderInput  = document.getElementById('folderInput');
+const dropEmpty    = document.getElementById('dropEmpty');
+const photoGrid    = document.getElementById('photoGrid');
+const photoScroll  = document.getElementById('photoScroll');
+const clearAllBtn  = document.getElementById('clearAllBtn');
+const tbCount      = document.getElementById('tbCount');
+
+const previewCanvas   = document.getElementById('previewCanvas');
+const pCtx            = previewCanvas.getContext('2d');
+const previewCanvasWm = document.getElementById('previewCanvasWm');
+const pCtxWm          = previewCanvasWm.getContext('2d');
+const origEmpty       = document.getElementById('origEmpty');
+const wmEmpty         = document.getElementById('wmEmpty');
+const previewName     = document.getElementById('previewName');
+const origVideoWrap   = document.getElementById('origVideoWrap');
+const wmVideoWrap     = document.getElementById('wmVideoWrap');
+const origVideo       = document.getElementById('origVideo');
+const wmVideo         = document.getElementById('wmVideo');
+const videoWmOverlay  = document.getElementById('videoWmOverlay');
+const videoWmCanvas   = document.getElementById('videoWmCanvas');
+const vwCtx           = videoWmCanvas.getContext('2d');
+const processCanvas   = document.getElementById('processCanvas');
+const rCtx            = processCanvas.getContext('2d');
+const downloadBtn     = document.getElementById('downloadBtn');
+const progressWrap    = document.getElementById('progressWrap');
+const progressFill    = document.getElementById('progressFill');
+const progressLabel   = document.getElementById('progressLabel');
+const sizeRange       = document.getElementById('sizeRange');
+const opacityRange    = document.getElementById('opacityRange');
+const paddingRange    = document.getElementById('paddingRange');
+const qualityRange    = document.getElementById('qualityRange');
+const sizeVal         = document.getElementById('sizeVal');
+const opacityVal      = document.getElementById('opacityVal');
+const paddingVal      = document.getElementById('paddingVal');
+const qualityVal      = document.getElementById('qualityVal');
+const wmText          = document.getElementById('wmText');
+const wmColor         = document.getElementById('wmColor');
+const wmFont          = document.getElementById('wmFont');
+const vidWarning      = document.getElementById('vidWarning');
+
+// ── WM MODE ──
+function switchWmTab(mode) {
+  wmMode = mode;
+  document.getElementById('tabLogo').classList.toggle('active', mode === 'logo');
+  document.getElementById('tabText').classList.toggle('active', mode === 'text');
+  document.getElementById('logoWmSection').style.display = mode === 'logo' ? '' : 'none';
+  document.getElementById('textWmSection').classList.toggle('visible', mode === 'text');
+  refreshPreview(); updateUI();
+}
+
+// ── PREVIEW MODE ──
+function setPreviewMode(mode) {
+  previewMode = mode;
+  document.getElementById('btnSideBySide').classList.toggle('active', mode === 'side');
+  document.getElementById('btnSingle').classList.toggle('active', mode === 'single');
+  document.getElementById('origSide').style.display = mode === 'side' ? '' : 'none';
+  document.getElementById('previewDivider').style.display = mode === 'side' ? '' : 'none';
+  refreshPreview();
+}
+
+// ── SLIDERS ──
+sizeRange.addEventListener('input',    () => { sizeVal.textContent    = sizeRange.value    + '%'; refreshPreview(); });
+opacityRange.addEventListener('input', () => { opacityVal.textContent = opacityRange.value + '%'; refreshPreview(); });
+paddingRange.addEventListener('input', () => { paddingVal.textContent = paddingRange.value + '%'; refreshPreview(); });
+qualityRange.addEventListener('input', () => { qualityVal.textContent = qualityRange.value + '%'; });
+wmText.addEventListener('input', () => refreshPreview());
+wmColor.addEventListener('input', () => refreshPreview());
+wmFont.addEventListener('change', () => refreshPreview());
+
+// ── POSITION GRID ──
+document.getElementById('posGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.pos-btn');
+  if (!btn) return;
+  document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  position = btn.dataset.pos;
+  refreshPreview();
+});
+
+// ── LOGO ──
+logoInput.addEventListener('change', e => loadLogo(e.target.files[0]));
+logoZone.addEventListener('dragover',  e => { e.preventDefault(); logoZone.classList.add('drag-over'); });
+logoZone.addEventListener('dragleave', () => logoZone.classList.remove('drag-over'));
+logoZone.addEventListener('drop', e => {
+  e.preventDefault(); logoZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadLogo(f);
+});
+clearLogo.addEventListener('click', e => {
+  e.preventDefault();
+  logoImg = null; logoInput.value = '';
+  logoPreview.classList.remove('visible');
+  logoZone.style.display = 'block';
+  refreshPreview(); updateUI();
+});
+function loadLogo(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    logoImg = img;
+    logoThumb.src = url;
+    logoFileName.textContent = file.name;
+    logoPreview.classList.add('visible');
+    logoZone.style.display = 'none';
+    refreshPreview(); updateUI();
+  };
+  img.src = url;
+}
+
+// ── FILE LOADING ──
+photosInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+videosInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+pdfsInput.addEventListener('change',   e => addFiles(Array.from(e.target.files)));
+folderInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+clearAllBtn.addEventListener('click', () => { files = []; previewIdx = null; renderGrid(); clearPreviewPanel(); updateUI(); });
+
+photoScroll.addEventListener('dragover', e => { e.preventDefault(); dropEmpty.classList.add('drag-over'); });
+photoScroll.addEventListener('dragleave', e => { if (!photoScroll.contains(e.relatedTarget)) dropEmpty.classList.remove('drag-over'); });
+photoScroll.addEventListener('drop', e => { e.preventDefault(); dropEmpty.classList.remove('drag-over'); addFiles(Array.from(e.dataTransfer.files)); });
+
+function getFileType(file) {
+  if (file.type.startsWith('image/')) return 'img';
+  if (file.type.startsWith('video/')) return 'vid';
+  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return 'pdf';
+  return null;
+}
+
+function addFiles(rawFiles) {
+  const supported = rawFiles.filter(f => getFileType(f) !== null);
+  if (!supported.length) return;
+  supported.forEach(file => {
+    const type = getFileType(file);
+    const url = type !== 'pdf' ? URL.createObjectURL(file) : null;
+    files.push({ file, url, name: file.name, type });
+  });
+  renderGrid();
+  if (previewIdx === null && files.length > 0) { previewIdx = 0; refreshPreview(); }
+  updateUI();
+}
+
+// ── RENDER GRID ──
+function renderGrid() {
+  if (files.length === 0) {
+    dropEmpty.style.display = 'flex'; photoGrid.style.display = 'none'; photoGrid.innerHTML = ''; return;
+  }
+  dropEmpty.style.display = 'none'; photoGrid.style.display = 'grid';
+  const frag = document.createDocumentFragment();
+  files.forEach((f, i) => {
+    const item = document.createElement('div');
+    item.className = 'photo-item' + (i === previewIdx ? ' selected' : '');
+    item.dataset.i = i; item.title = f.name;
+    let inner = '';
+    if (f.type === 'img') inner = `<img src="${f.url}" alt="" loading="lazy"><span class="type-badge img">IMG</span>`;
+    else if (f.type === 'vid') inner = `<div class="vid-thumb"><span>🎬</span><p>${f.name.split('.').pop().toUpperCase()}</p></div><span class="type-badge vid">VID</span>`;
+    else inner = `<div class="pdf-thumb"><span>📄</span><p>PDF</p></div><span class="type-badge pdf">PDF</span>`;
+    inner += `<button class="rm" data-i="${i}" title="Remove">✕</button><div class="sel-dot"></div>`;
+    item.innerHTML = inner;
+    frag.appendChild(item);
+  });
+  photoGrid.innerHTML = ''; photoGrid.appendChild(frag); updateUI();
+}
+
+photoGrid.addEventListener('click', e => {
+  const rmBtn = e.target.closest('.rm');
+  if (rmBtn) {
+    e.stopPropagation();
+    const idx = +rmBtn.dataset.i;
+    files.splice(idx, 1);
+    if (previewIdx === idx) { previewIdx = files.length > 0 ? Math.min(idx, files.length - 1) : null; }
+    else if (previewIdx > idx) previewIdx--;
+    renderGrid();
+    if (previewIdx !== null) refreshPreview(); else clearPreviewPanel();
+    return;
+  }
+  const item = e.target.closest('.photo-item');
+  if (item) {
+    previewIdx = +item.dataset.i;
+    document.querySelectorAll('.photo-item').forEach(el => el.classList.remove('selected'));
+    item.classList.add('selected');
+    refreshPreview();
+  }
+});
+
+// ── CLEAR PREVIEW ──
+function clearPreviewPanel() {
+  origEmpty.style.display = 'flex'; wmEmpty.style.display = 'flex';
+  previewCanvas.style.display = 'none'; previewCanvasWm.style.display = 'none';
+  origVideoWrap.style.display = 'none'; wmVideoWrap.style.display = 'none';
+  previewName.style.display = 'none';
+}
+
+// ── WATERMARK HELPERS ──
+function hasWatermark() {
+  return wmMode === 'text' ? wmText.value.trim() !== '' : !!logoImg;
+}
+
+function drawWatermarkOnCanvas(ctx, imgW, imgH) {
+  const size    = sizeRange.value / 100;
+  const opacity = opacityRange.value / 100;
+  const padding = paddingRange.value / 100;
+  ctx.save(); ctx.globalAlpha = opacity;
+  if (wmMode === 'logo' && logoImg) {
+    const logoW = imgW * size;
+    const logoH = logoW * (logoImg.height / logoImg.width);
+    const pad   = imgW * padding;
+    const [x, y] = calcXY(imgW, imgH, logoW, logoH, pad);
+    ctx.drawImage(logoImg, x, y, logoW, logoH);
+  } else if (wmMode === 'text' && wmText.value.trim()) {
+    const fontSize = Math.max(12, imgW * size * 0.4);
+    ctx.font = `bold ${fontSize}px ${wmFont.value}`;
+    ctx.fillStyle = wmColor.value;
+    ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(wmText.value).width;
+    const th = fontSize;
+    const pad = imgW * padding;
+    const [x, y] = calcXY(imgW, imgH, tw, th, pad);
+    ctx.fillText(wmText.value, x, y + th / 2);
+  }
+  ctx.restore();
+}
+
+function calcXY(imgW, imgH, logoW, logoH, pad) {
+  switch (position) {
+    case 'top-left':      return [pad, pad];
+    case 'top-center':    return [(imgW - logoW) / 2, pad];
+    case 'top-right':     return [imgW - logoW - pad, pad];
+    case 'middle-left':   return [pad, (imgH - logoH) / 2];
+    case 'center':        return [(imgW - logoW) / 2, (imgH - logoH) / 2];
+    case 'middle-right':  return [imgW - logoW - pad, (imgH - logoH) / 2];
+    case 'bottom-left':   return [pad, imgH - logoH - pad];
+    case 'bottom-center': return [(imgW - logoW) / 2, imgH - logoH - pad];
+    case 'bottom-right':  return [imgW - logoW - pad, imgH - logoH - pad];
+    default:              return [imgW - logoW - pad, imgH - logoH - pad];
+  }
+}
+
+// ── PREVIEW ──
+function refreshPreview() {
+  if (previewIdx === null || previewIdx >= files.length) { clearPreviewPanel(); return; }
+  const f = files[previewIdx];
+  previewName.textContent = f.name; previewName.style.display = 'block';
+  if (f.type === 'img') previewImage(f);
+  else if (f.type === 'vid') previewVideo(f);
+  else if (f.type === 'pdf') previewPDF(f);
+}
+
+function previewImage(f) {
+  origVideoWrap.style.display = 'none'; wmVideoWrap.style.display = 'none';
+  const img = new Image();
+  img.onload = () => {
+    const origSide = document.getElementById('origSide');
+    const wmSideEl = document.getElementById('wmSide');
+    function fitCanvas(canvas, ctx, container) {
+      const maxW = container.clientWidth - 30;
+      const maxH = container.clientHeight - 50;
+      const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      canvas.width = w; canvas.height = h;
+      ctx.clearRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+      return { w, h };
+    }
+    if (previewMode === 'side') {
+      fitCanvas(previewCanvas, pCtx, origSide);
+      previewCanvas.style.display = 'block'; origEmpty.style.display = 'none';
+    } else { previewCanvas.style.display = 'none'; origEmpty.style.display = 'flex'; }
+    const { w: w2, h: h2 } = fitCanvas(previewCanvasWm, pCtxWm, wmSideEl);
+    if (hasWatermark()) drawWatermarkOnCanvas(pCtxWm, w2, h2);
+    previewCanvasWm.style.display = 'block'; wmEmpty.style.display = 'none';
+  };
+  img.src = f.url;
+}
+
+function previewVideo(f) {
+  previewCanvas.style.display = 'none'; previewCanvasWm.style.display = 'none';
+  origEmpty.style.display = previewMode === 'side' ? 'none' : 'flex';
+  wmEmpty.style.display = 'none';
+  if (previewMode === 'side') {
+    origVideoWrap.style.display = 'flex'; origVideo.src = f.url;
+  } else { origVideoWrap.style.display = 'none'; }
+  wmVideoWrap.style.display = 'flex'; wmVideo.src = f.url;
+  wmVideo.onloadedmetadata = () => {
+    requestAnimationFrame(() => {
+      const rect = wmVideo.getBoundingClientRect();
+      const dw = rect.width || wmVideo.videoWidth;
+      const dh = rect.height || wmVideo.videoHeight;
+      videoWmCanvas.width = dw; videoWmCanvas.height = dh;
+      vwCtx.clearRect(0, 0, dw, dh);
+      if (hasWatermark()) drawWatermarkOnCanvas(vwCtx, dw, dh);
+      videoWmOverlay.style.width = dw + 'px'; videoWmOverlay.style.height = dh + 'px';
+    });
+  };
+}
+
+async function previewPDF(f) {
+  origVideoWrap.style.display = 'none'; wmVideoWrap.style.display = 'none';
+  if (!window.pdfjsLib) { origEmpty.style.display = 'flex'; wmEmpty.style.display = 'flex'; return; }
+  try {
+    const ab = await f.file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.5 });
+    if (previewMode === 'side') {
+      previewCanvas.width = viewport.width; previewCanvas.height = viewport.height;
+      await page.render({ canvasContext: pCtx, viewport }).promise;
+      previewCanvas.style.display = 'block'; origEmpty.style.display = 'none';
+    } else { previewCanvas.style.display = 'none'; origEmpty.style.display = 'flex'; }
+    previewCanvasWm.width = viewport.width; previewCanvasWm.height = viewport.height;
+    await page.render({ canvasContext: pCtxWm, viewport }).promise;
+    if (hasWatermark()) drawWatermarkOnCanvas(pCtxWm, viewport.width, viewport.height);
+    previewCanvasWm.style.display = 'block'; wmEmpty.style.display = 'none';
+  } catch(e) { console.error('PDF preview error', e); }
+}
+
+// ── DOWNLOAD ALL ──
+downloadBtn.addEventListener('click', async () => {
+  if (!hasWatermark() || files.length === 0) return;
+  downloadBtn.disabled = true; progressWrap.style.display = 'block';
+  const quality = qualityRange.value / 100;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    progressFill.style.width = ((i / files.length) * 100) + '%';
+    progressLabel.textContent = `Processing ${i + 1} of ${files.length}: ${f.name}`;
+    if (f.type === 'img') await processImage(f, quality);
+    else if (f.type === 'vid') await processVideo(f, quality);
+    else if (f.type === 'pdf') await processPDF(f, quality);
+    await new Promise(r => setTimeout(r, 60));
+  }
+  progressFill.style.width = '100%';
+  progressLabel.textContent = `✓ Done! ${files.length} file${files.length > 1 ? 's' : ''} watermarked`;
+  showToast(`✓ ${files.length} file${files.length > 1 ? 's' : ''} watermarked!`);
+  setTimeout(() => { progressWrap.style.display = 'none'; progressFill.style.width = '0%'; downloadBtn.disabled = false; }, 2800);
+});
+
+async function processImage(f, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      processCanvas.width = img.width; processCanvas.height = img.height;
+      rCtx.clearRect(0, 0, img.width, img.height);
+      rCtx.drawImage(img, 0, 0);
+      drawWatermarkOnCanvas(rCtx, img.width, img.height);
+      const isPng = /\.png$/i.test(f.name);
+      const mime  = isPng ? 'image/png' : 'image/jpeg';
+      const ext   = isPng ? '.png' : '.jpg';
+      const stem  = f.name.replace(/\.[^.]+$/, '');
+      const a = document.createElement('a');
+      a.download = `${stem}_watermarked${ext}`;
+      a.href = processCanvas.toDataURL(mime, isPng ? 1.0 : quality);
+      a.click(); resolve();
+    };
+    img.src = f.url;
+  });
+}
+
+async function processVideo(f, quality) {
+  return new Promise(async resolve => {
+    const video = document.createElement('video');
+    video.src = f.url; video.muted = true;
+    await new Promise(r => { video.onloadedmetadata = r; video.load(); });
+    const vw = video.videoWidth; const vh = video.videoHeight;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = vw; offCanvas.height = vh;
+    const offCtx = offCanvas.getContext('2d');
+    const bitrate = Math.round(vw * vh * 30 * quality * 0.1);
+    let mimeType = 'video/webm;codecs=vp9';
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8';
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+    const stream = offCanvas.captureStream(30);
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: Math.max(bitrate, 5_000_000) });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: mimeType });
+      const url  = URL.createObjectURL(blob);
+      const stem = f.name.replace(/\.[^.]+$/, '');
+      const a = document.createElement('a');
+      a.download = `${stem}_watermarked.webm`; a.href = url; a.click();
+      URL.revokeObjectURL(url); resolve();
+    };
+    recorder.start(); video.currentTime = 0;
+    await new Promise(r => { video.onseeked = r; });
+    video.play();
+    const renderFrame = () => {
+      if (video.ended || video.paused) { recorder.stop(); return; }
+      offCtx.clearRect(0, 0, vw, vh); offCtx.drawImage(video, 0, 0, vw, vh);
+      drawWatermarkOnCanvas(offCtx, vw, vh); requestAnimationFrame(renderFrame);
+    };
+    video.onplay = renderFrame; video.onended = () => recorder.stop();
+  });
+}
+
+async function processPDF(f, quality) {
+  if (!window.pdfjsLib || !window.jspdf) return;
+  const { jsPDF } = window.jspdf;
+  const ab = await f.file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+  const numPages = pdf.numPages;
+  const renderScale = 1 + quality * 2;
+  let doc = null;
+  for (let p = 1; p <= numPages; p++) {
+    progressLabel.textContent = `PDF page ${p}/${numPages} — ${f.name}`;
+    const page = await pdf.getPage(p);
+    const viewport = page.getViewport({ scale: renderScale });
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = viewport.width; tmpCanvas.height = viewport.height;
+    const tmpCtx = tmpCanvas.getContext('2d');
+    await page.render({ canvasContext: tmpCtx, viewport }).promise;
+    drawWatermarkOnCanvas(tmpCtx, viewport.width, viewport.height);
+    const imgData = tmpCanvas.toDataURL('image/jpeg', quality);
+    const mmW = viewport.width  * 25.4 / 96;
+    const mmH = viewport.height * 25.4 / 96;
+    if (!doc) { doc = new jsPDF({ orientation: mmW > mmH ? 'l' : 'p', unit: 'mm', format: [mmW, mmH] }); }
+    else { doc.addPage([mmW, mmH], mmW > mmH ? 'l' : 'p'); }
+    doc.addImage(imgData, 'JPEG', 0, 0, mmW, mmH);
+  }
+  if (doc) { const stem = f.name.replace(/\.[^.]+$/, ''); doc.save(`${stem}_watermarked.pdf`); }
+}
+
+// ── UI ──
+function updateUI() {
+  const imgs = files.filter(f => f.type === 'img').length;
+  const vids = files.filter(f => f.type === 'vid').length;
+  const pdfs = files.filter(f => f.type === 'pdf').length;
+  const total = files.length;
+  document.querySelector('#hImg strong').textContent = imgs;
+  document.querySelector('#hVid strong').textContent = vids;
+  document.querySelector('#hPdf strong').textContent = pdfs;
+  tbCount.innerHTML = total === 0 ? '' : `<strong>${total}</strong> file${total > 1 ? 's' : ''}`;
+  downloadBtn.disabled = !(total > 0 && hasWatermark());
+  vidWarning.classList.toggle('visible', vids > 0);
+}
+
+updateUI(); clearPreviewPanel();
+</script>
+</body>
+</html>
