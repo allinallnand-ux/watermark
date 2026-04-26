@@ -1,0 +1,29 @@
+{
+  "name": "Markly Pro — Watermark Studio",
+  "short_name": "Markly Pro",
+  "description": "Professional watermark studio for images, videos and PDFs. Designed by Nand Kishor Chaudhary.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f0e8",
+  "theme_color": "#2b6bc8",
+  "lang": "en",
+  "categories": ["productivity", "photo", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
