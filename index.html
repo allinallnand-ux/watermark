@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Markly Pro">
+<meta name="theme-color" content="#2b6bc8">
+<meta name="description" content="Professional watermark studio for images and PDFs.">
+<title>Markly Pro — Watermark Studio</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root {
+  --ink: #0f0e0d;
+  --paper: #f5f0e8;
+  --cream: #ede7d9;
+  --accent: #c8472b;
+  --blue: #2b6bc8;
+  --muted: #8a8070;
+  --border: #cec5b5;
+  --panel: #faf7f2;
+  --vid: #7c3aed;
+  --pdf: #dc2626;
+  --img: #0369a1;
+  --fb: #1877f2;
+  --ig: #e1306c;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Instrument Sans', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* ── INSTALL BANNER ── */
+#installBanner, #iosHint {
+  display: none; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #1a3a6e, #2b6bc8);
+  color: white; padding: 10px 14px; flex-shrink: 0;
+  font-size: 12px; border-bottom: 1px solid #1e55a8;
+}
+#installBanner.visible, #iosHint.visible { display: flex; }
+.ib-text { flex: 1; line-height: 1.4; }
+.ib-text strong { display: block; font-size: 13px; }
+.ib-install-btn {
+  background: white; color: var(--blue); border: none; border-radius: 20px;
+  padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif; white-space: nowrap; flex-shrink: 0;
+}
+.ib-dismiss, .ih-dismiss {
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  cursor: pointer; font-size: 18px; padding: 4px 6px; min-width: 30px; min-height: 30px;
+}
+
+/* ── HEADER ── */
+header {
+  border-bottom: 1.5px solid var(--border);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); flex-shrink: 0;
+}
+.logo-text { font-family: 'DM Serif Display', serif; font-size: 20px; line-height: 1; }
+.logo-text em { color: var(--accent); font-style: italic; }
+.logo-badge {
+  font-family: 'DM Mono', monospace; font-size: 9px;
+  background: var(--blue); color: white; padding: 2px 5px; border-radius: 4px;
+  vertical-align: middle; margin-left: 3px;
+}
+.header-spacer { flex: 1; }
+.header-pills { display: flex; gap: 5px; align-items: center; }
+.hpill {
+  font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px;
+  background: var(--cream); border-radius: 20px; border: 1px solid var(--border);
+}
+.install-hdr-btn {
+  display: none; align-items: center; gap: 4px;
+  background: var(--blue); color: white; border: none; border-radius: 6px;
+  padding: 6px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+  min-height: 36px;
+}
+.install-hdr-btn.visible { display: flex; }
+
+/* ── MAIN SCROLL AREA ── */
+.main-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(16px + var(--safe-bottom));
+}
+
+/* ── SECTIONS ── */
+.section {
+  padding: 14px 14px 0;
+}
+.section-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── WATERMARK TYPE TABS ── */
+.wm-tabs {
+  display: flex; gap: 0;
+  border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 12px;
+}
+.wm-tab {
+  flex: 1; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+  background: var(--cream); border: none; color: var(--muted); min-height: 44px;
+}
+.wm-tab.active { background: var(--blue); color: white; }
+
+/* ── COMPACT SETTINGS CONTAINER ── */
+.wm-settings-container {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+/* ── LOGO UPLOAD ── */
+.upload-zone {
+  border: 1.5px dashed var(--border); border-radius: 6px;
+  padding: 10px; text-align: center; cursor: pointer;
+  background: var(--cream); display: block; transition: all 0.2s;
+  font-size: 11px;
+}
+.upload-zone:active { border-color: var(--accent); background: #fdf0ed; }
+.upload-zone input { display: none; }
+.upload-zone .icon { font-size: 18px; margin-bottom: 2px; display: block; }
+.upload-zone p { font-size: 10px; color: var(--muted); line-height: 1.2; margin: 0; }
+
+.logo-preview-wrap {
+  display: none; align-items: center; gap: 8px; padding: 8px;
+  background: var(--cream); border-radius: 6px; border: 1px solid var(--border);
+}
+.logo-preview-wrap.visible { display: flex; }
+.logo-preview-wrap img { width: 30px; height: 30px; object-fit: contain; border-radius: 4px; background: white; }
+.logo-name { font-size: 10px; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-clear { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px; }
+
+/* History Dropdown */
+.history-select {
+  width: 100%;
+  padding: 6px;
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  font-size: 11px;
+  font-family: 'Instrument Sans', sans-serif;
+}
+
+/* ── TEXT WM ── */
+.text-wm-wrap { display: none; flex-direction: column; gap: 8px; }
+.text-wm-wrap.visible { display: flex; }
+.text-wm-input {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 6px;
+  padding: 8px 10px; font-size: 13px; background: var(--cream); outline: none;
+}
+.text-color-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.text-color-row input[type=color] { width: 30px; height: 30px; border: 1.5px solid var(--border); border-radius: 4px; padding: 2px; background: none; cursor: pointer; }
+.wm-font-select {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 4px;
+  padding: 6px; background: var(--cream); font-size: 11px;
+}
+
+/* ── CONTROLS ── */
+.control-group { display: flex; flex-direction: column; gap: 10px; }
+.control-row { display: flex; align-items: center; gap: 8px; }
+.control-row label { font-size: 11px; font-weight: 600; min-width: 50px; color: var(--ink); }
+
+input[type=range] {
+  -webkit-appearance: none; flex: 1; height: 4px;
+  background: var(--border); border-radius: 3px; outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+/* Editable range value */
+.range-val-wrap { position: relative; }
+.range-val {
+  font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted);
+  min-width: 35px; text-align: right; cursor: pointer;
+  padding: 2px 4px; border-radius: 4px; border: 1px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.range-val:hover { border-color: var(--border); background: var(--cream); }
+.range-val-input {
+  display: none;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  width: 45px; text-align: right; padding: 2px 4px;
+  border: 1.5px solid var(--blue); border-radius: 4px;
+  background: white; outline: none; color: var(--ink);
+}
+.range-val-input.active { display: inline-block; }
+.range-val.hidden { display: none; }
+
+/* ── POSITION GRID ── */
+.pos-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 8px; }
+.pos-btn {
+  aspect-ratio: 1; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--cream); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 32px;
+}
+.pos-btn.active { border-color: var(--blue); background: var(--blue); }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
+.pos-btn.active .dot { background: white; }
+
+/* ── VID WARNING ── */
+.vid-warning {
+  display: none; background: #fef3c7; border: 1px solid #f59e0b;
+  border-radius: 8px; padding: 10px 12px; font-size: 11px; color: #92400e; line-height: 1.5;
+}
+.vid-warning.visible { display: block; }
+
+/* ── DOWNLOAD BUTTON ── */
+.dl-btn {
+  width: 100%; border: none; border-radius: 10px; padding: 14px;
+  font-family: 'Instrument Sans', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; background: var(--blue); color: white;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 50px; transition: opacity 0.2s, transform 0.1s;
+}
+.dl-btn:active { transform: scale(0.98); }
+.dl-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+.progress-wrap { display: none; margin-top: 10px; }
+.progress-bar-bg { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--blue); width: 0%; transition: width 0.25s; }
+.progress-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 5px; text-align: center; }
+
+/* ── CREDITS ── */
+.credits-block { border-top: 1px solid var(--border); padding: 14px 14px 0; margin-top: 6px; }
+.credits-name { font-family: 'DM Serif Display', serif; font-size: 13px; margin-bottom: 2px; }
+.credits-name em { color: var(--accent); font-style: italic; }
+.credits-sub { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+.social-links { display: flex; gap: 8px; }
+.social-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px;
+  border-radius: 8px; border: 1.5px solid; font-size: 12px; font-weight: 600;
+  text-decoration: none; flex: 1; justify-content: center; min-height: 42px;
+}
+.social-btn.fb { border-color: var(--fb); color: var(--fb); background: #f0f6ff; }
+.social-btn.ig { border-color: var(--ig); color: var(--ig); background: #fff0f5; }
+
+/* ── DIVIDER ── */
+.section-divider { height: 10px; background: var(--cream); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 14px 0; }
+
+/* ── FILE TOOLBAR ── */
+.grid-toolbar {
+  display: flex; align-items: center; gap: 6px; padding: 10px 14px;
+  background: var(--panel); border-bottom: 1.5px solid var(--border);
+  flex-wrap: wrap; flex-shrink: 0; position: sticky; top: 0; z-index: 10;
+}
+.tb-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+  background: white; color: var(--ink); white-space: nowrap; min-height: 40px;
+}
+.tb-btn input { display: none; }
+.tb-btn.danger { border-color: #fca5a5; color: var(--accent); background: #fff5f5; }
+.tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+.tb-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-left: auto; }
+
+/* ── FILE GRID ── */
+.photo-scroll { padding: 12px 14px; }
+.drop-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 160px; border: 2px dashed var(--border); border-radius: 12px;
+  cursor: pointer; background: var(--panel); color: var(--muted); text-align: center;
+  gap: 8px; padding: 24px;
+}
+.drop-empty.drag-over { border-color: var(--blue); background: #f0f5fd; }
+.drop-empty .de-icon { font-size: 32px; opacity: 0.4; }
+.drop-empty h3 { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--ink); }
+.drop-empty p { font-size: 12px; line-height: 1.5; }
+.drop-chips { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+.drop-chip {
+  font-family: 'DM Mono', monospace; font-size: 9px; padding: 3px 7px;
+  border-radius: 10px; border: 1px solid var(--border); color: var(--muted);
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+  gap: 8px;
+}
+.photo-item {
+  position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  border: 2px solid transparent; background: var(--cream); cursor: pointer;
+  transition: transform 0.15s;
+}
+.photo-item:active { transform: scale(0.95); }
+.photo-item.selected { border-color: var(--blue); box-shadow: 0 0 0 2px #2b6bc844; }
+.photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-item .rm {
+  position: absolute; top: 4px; right: 4px;
+  background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%;
+  width: 22px; height: 22px; cursor: pointer; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.type-badge {
+  position: absolute; top: 4px; left: 4px;
+  font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700;
+  padding: 2px 5px; border-radius: 4px; color: white; pointer-events: none;
+}
+.type-badge.img { background: var(--img); }
+.type-badge.vid { background: var(--vid); }
+.type-badge.pdf { background: var(--pdf); }
+.pdf-thumb, .vid-thumb {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+}
+.pdf-thumb { background: #fff5f5; }
+.vid-thumb { background: #f5f0ff; }
+.pdf-thumb span, .vid-thumb span { font-size: 22px; }
+.pdf-thumb p, .vid-thumb p { font-size: 9px; font-weight: 600; font-family: 'DM Mono', monospace; }
+
+/* preview icon overlay on thumb */
+.preview-icon-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.35);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s; pointer-events: none;
+  border-radius: 6px;
+}
+.photo-item:active .preview-icon-overlay { opacity: 1; }
+.preview-icon-overlay span { font-size: 24px; }
+
+/* ── BOTTOM SHEET ── */
+.sheet-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.sheet-overlay.open { opacity: 1; pointer-events: all; }
+
+.bottom-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #181818; border-radius: 20px 20px 0 0;
+  z-index: 1001;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  display: flex; flex-direction: column;
+  max-height: 92dvh;
+  padding-bottom: var(--safe-bottom);
+}
+.bottom-sheet.open { transform: translateY(0); }
+
+.sheet-handle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 8px;
+}
+.sheet-handle {
+  width: 40px; height: 4px; background: #444; border-radius: 2px; margin: 0 auto;
+}
+.sheet-close {
+  position: absolute; right: 14px; top: 10px;
+  background: #2a2a2a; border: none; color: #aaa; border-radius: 50%;
+  width: 32px; height: 32px; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.sheet-topbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 16px 12px;
+}
+.sheet-filename {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: #aaa;
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sheet-badge {
+  font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 700;
+  padding: 3px 7px; border-radius: 6px; color: white;
+}
+
+.sheet-canvas-wrap {
+  flex: 1; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  padding: 0 16px 12px; min-height: 0;
+}
+#sheetCanvas {
+  max-width: 100%; max-height: 100%;
+  border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  display: none;
+}
+.sheet-video-wrap {
+  display: none; position: relative; max-width: 100%; max-height: 100%;
+}
+.sheet-video-wrap video {
+  max-width: 100%; max-height: 100%; border-radius: 8px; display: block;
+}
+#sheetVideoWmCanvas {
+  position: absolute; top: 0; left: 0; pointer-events: none; border-radius: 8px;
+}
+.sheet-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; color: #555; text-align: center; padding: 40px;
+}
+.sheet-empty .se-icon { font-size: 36px; opacity: 0.3; }
+.sheet-empty p { font-size: 13px; }
+
+.sheet-nav {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px 8px;
+  border-top: 1px solid #2a2a2a;
+}
+.sheet-nav-btn {
+  background: #222; border: 1px solid #333; color: #ccc; border-radius: 8px;
+  width: 40px; height: 40px; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.sheet-nav-btn:disabled { opacity: 0.3; cursor: default; }
+.sheet-nav-label {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: #666;
+  flex: 1; text-align: center;
+}
+.sheet-dl-btn {
+  background: var(--blue); border: none; color: white; border-radius: 8px;
+  padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif; min-height: 40px;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: #1a2a1a; color: #4ade80; border: 1px solid #16a34a; border-radius: 10px;
+  padding: 10px 20px; font-family: 'DM Mono', monospace; font-size: 12px;
+  z-index: 9999; transition: transform 0.3s ease; white-space: nowrap;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9998;
+}
+</style>
+</head>
+<body>
+
+<!-- Install Banner -->
+<div id="installBanner">
+  <span style="font-size:18px;">📲</span>
+  <div class="ib-text">
+    <strong>Install Markly Pro</strong>
+    <span>Works offline · No app store needed</span>
+  </div>
+  <button class="ib-install-btn" id="installBtn">Install</button>
+  <button class="ib-dismiss" id="dismissBanner">✕</button>
+</div>
+
+<!-- iOS Install Hint -->
+<div id="iosHint">
+  <span style="font-size:18px;">📲</span>
+  <div class="ib-text">
+    <strong>Add to Home Screen:</strong> Tap <strong>Share ↑</strong> then <strong>"Add to Home Screen"</strong>
+  </div>
+  <button class="ih-dismiss" id="dismissIos">✕</button>
+</div>
+
+<!-- Header -->
+<header>
+  <span class="logo-text">Mark<em>ly</em><span class="logo-badge">PRO</span></span>
+  <div class="header-spacer"></div>
+  <div class="header-pills">
+    <div class="hpill" id="hImg">🖼️ <strong>0</strong></div>
+    <div class="hpill" id="hVid">🎬 <strong>0</strong></div>
+    <div class="hpill" id="hPdf">📄 <strong>0</strong></div>
+  </div>
+  <button class="install-hdr-btn" id="installHdrBtn">📲 Install</button>
+</header>
+
+<!-- Main scroll area -->
+<div class="main-scroll" id="mainScroll">
+
+  <!-- Watermark section -->
+  <div class="section" style="padding-top:14px;">
+    <div class="section-label">Watermark</div>
+
+    <div class="wm-tabs">
+      <button class="wm-tab active" id="tabLogo" onclick="switchWmTab('logo')">🏷️ Logo</button>
+      <button class="wm-tab" id="tabText" onclick="switchWmTab('text')">🔤 Text</button>
+    </div>
+
+    <!-- Compact Settings Container -->
+    <div class="wm-settings-container">
+      
+      <!-- Logo Section -->
+      <div id="logoWmSection">
+        <label class="upload-zone" id="logoZone">
+          <input type="file" id="logoInput" accept="image/*">
+          <span class="icon">🏷️</span>
+          <p><strong>Upload Logo</strong><br>PNG recommended</p>
+        </label>
+        <div class="logo-preview-wrap" id="logoPreview">
+          <img id="logoThumb" src="" alt="logo">
+          <span class="logo-name" id="logoFileName"></span>
+          <button class="btn-clear" id="clearLogo">✕</button>
+        </div>
+        <!-- Logo History -->
+        <select id="logoHistorySelect" class="history-select" style="display:none;">
+          <option value="" disabled selected>Recent Logos...</option>
+        </select>
+      </div>
+
+      <!-- Text Section -->
+      <div class="text-wm-wrap" id="textWmSection">
+        <input type="text" class="text-wm-input" id="wmText" placeholder="Enter watermark text…">
+        <!-- Text History -->
+        <select id="textHistorySelect" class="history-select" style="display:none;">
+          <option value="" disabled selected>Recent Texts...</option>
+        </select>
+        <div class="text-color-row">
+          <label>Color</label>
+          <input type="color" id="wmColor" value="#ffffff">
+          <label style="margin-left:6px;">Font</label>
+          <select id="wmFont" class="wm-font-select">
+            <option value="'Instrument Sans', sans-serif">Sans</option>
+            <option value="'DM Mono', monospace">Mono</option>
+            <option value="serif">Serif</option>
+            <option value="cursive">Cursive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Shared Position Grid (Changes based on Tab) -->
+      <div class="section-label" style="margin-top:12px; margin-bottom:6px;">Position</div>
+      <div class="pos-grid" id="posGrid">
+        <button class="pos-btn" data-pos="top-left"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="top-center"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="top-right"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="middle-left"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="center"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="middle-right"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="bottom-left"><span class="dot"></span></button>
+        <button class="pos-btn" data-pos="bottom-center"><span class="dot"></span></button>
+        <button class="pos-btn active" data-pos="bottom-right"><span class="dot"></span></button>
+      </div>
+
+      <!-- Shared Sliders (Values change based on Tab) -->
+      <div class="control-group" style="margin-top:12px;">
+        <div class="control-row">
+          <label id="sizeLabel">Size</label>
+          <input type="range" id="sizeRange" min="5" max="50" value="20">
+          <div class="range-val-wrap">
+            <span class="range-val" id="sizeVal" title="Tap to edit">20%</span>
+            <input type="number" class="range-val-input" id="sizeInput" min="5" max="50" value="20">
+          </div>
+        </div>
+
+        <div class="control-row">
+          <label>Opacity</label>
+          <input type="range" id="opacityRange" min="10" max="100" value="80">
+          <div class="range-val-wrap">
+            <span class="range-val" id="opacityVal" title="Tap to edit">80%</span>
+            <input type="number" class="range-val-input" id="opacityInput" min="10" max="100" value="80">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- Files section -->
+  <div>
+    <div class="grid-toolbar">
+      <label class="tb-btn">
+        <input type="file" id="photosInput" accept="image/*" multiple>🖼️ Images
+      </label>
+      <label class="tb-btn">
+        <input type="file" id="videosInput" accept="video/*" multiple>🎬 Videos
+      </label>
+      <label class="tb-btn">
+        <input type="file" id="pdfsInput" accept="application/pdf" multiple>📄 PDFs
+      </label>
+      <label class="tb-btn">
+        <input type="file" id="folderInput" webkitdirectory multiple>📁 Folder
+      </label>
+      <div class="tb-sep"></div>
+      <button class="tb-btn danger" id="clearAllBtn">🗑 Clear</button>
+      <div class="tb-count" id="tbCount"></div>
+    </div>
+
+    <div class="photo-scroll" id="photoScroll">
+      <div class="drop-empty" id="dropEmpty">
+        <div class="de-icon">📂</div>
+        <h3>Add files</h3>
+        <p>Images · Videos · PDFs</p>
+        <div class="drop-chips">
+          <span class="drop-chip">JPG PNG WEBP</span>
+          <span class="drop-chip">MP4 WEBM</span>
+          <span class="drop-chip">PDF</span>
+        </div>
+      </div>
+      <div class="photo-grid" id="photoGrid" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- Vid warning -->
+  <div class="section">
+    <div class="vid-warning" id="vidWarning">
+      ⚠️ <strong>Video note:</strong> Processing video takes time. Watermarked video will be saved as .webm.
+    </div>
+  </div>
+
+  <!-- Download -->
+  <div class="section" style="padding-bottom:16px;">
+    <button class="dl-btn" id="downloadBtn" disabled>⬇ Download All Watermarked</button>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel"></div>
+    </div>
+  </div>
+
+  <!-- Credits -->
+  <div class="credits-block" style="padding-bottom:16px;">
+    <div class="credits-name">By <em>Nand Kishor Chaudhary</em></div>
+    <div class="credits-sub">Markly Pro — Watermark Studio</div>
+    <div class="social-links">
+      <a class="social-btn fb" href="https://www.facebook.com/nandchy" target="_blank">📘 Facebook</a>
+      <a class="social-btn ig" href="https://www.instagram.com/nandk_nk" target="_blank">📷 Instagram</a>
+    </div>
+  </div>
+
+</div><!-- /main-scroll -->
+
+<!-- Bottom Sheet Preview -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="sheet-handle-row">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" id="sheetCloseBtn">✕</button>
+  </div>
+  <div class="sheet-topbar">
+    <span class="sheet-filename" id="sheetFilename">—</span>
+    <span class="sheet-badge" id="sheetBadge"></span>
+  </div>
+  <div class="sheet-canvas-wrap" id="sheetCanvasWrap">
+    <div class="sheet-empty" id="sheetEmpty">
+      <div class="se-icon">✨</div>
+      <p>Watermarked preview<br>will appear here</p>
+    </div>
+    <canvas id="sheetCanvas"></canvas>
+    <div class="sheet-video-wrap" id="sheetVideoWrap">
+      <video id="sheetVideo" controls muted playsinline style="max-width:100%;max-height:55dvh;border-radius:8px;"></video>
+      <canvas id="sheetVideoWmCanvas"></canvas>
+    </div>
+  </div>
+  <div class="sheet-nav">
+    <button class="sheet-nav-btn" id="sheetPrev">‹</button>
+    <span class="sheet-nav-label" id="sheetNavLabel">—</span>
+    <button class="sheet-nav-btn" id="sheetNext">›</button>
+    <button class="sheet-dl-btn" id="sheetDlBtn">⬇ Save</button>
+  </div>
+</div>
+
+<!-- Hidden processing canvas -->
+<canvas id="processCanvas" style="display:none;"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PDF.js ──
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(r => console.log('SW:', r.scope))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+
+// ── PWA INSTALL ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('visible');
+  document.getElementById('installHdrBtn').classList.add('visible');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('visible');
+  document.getElementById('installHdrBtn').classList.remove('visible');
+  showToast('✓ Markly Pro installed!');
+});
+async function triggerInstall() {
+  if (!deferredPrompt) { showToast('Open in Chrome for install prompt'); return; }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('visible');
+  document.getElementById('installHdrBtn').classList.remove('visible');
+}
+document.getElementById('installBtn').addEventListener('click', triggerInstall);
+document.getElementById('installHdrBtn').addEventListener('click', triggerInstall);
+document.getElementById('dismissBanner').addEventListener('click', () => document.getElementById('installBanner').classList.remove('visible'));
+
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isStandalone = window.navigator.standalone === true;
+if (isIOS && !isStandalone) {
+  document.getElementById('iosHint').classList.add('visible');
+  document.getElementById('installHdrBtn').classList.add('visible');
+  document.getElementById('installHdrBtn').onclick = () =>
+    document.getElementById('iosHint').scrollIntoView({ behavior: 'smooth' });
+}
+document.getElementById('dismissIos').addEventListener('click', () =>
+  document.getElementById('iosHint').classList.remove('visible'));
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── STATE & LOCAL STORAGE ──
+let files = [];
+let sheetIdx = null;
+
+// Settings State
+let currentTab = 'logo'; // 'logo' or 'text'
+
+// Default Settings
+const defaultSettings = {
+  logo: { size: 20, opacity: 80, pos: 'bottom-right' },
+  text: { size: 15, opacity: 80, pos: 'bottom-right', color: '#ffffff', font: "'Instrument Sans', sans-serif", text: "" }
+};
+
+// Load Settings from LocalStorage
+let appSettings = JSON.parse(localStorage.getItem('markly_settings')) || JSON.parse(JSON.stringify(defaultSettings));
+
+// History State
+let logoHistory = JSON.parse(localStorage.getItem('markly_logo_history')) || [];
+let textHistory = JSON.parse(localStorage.getItem('markly_text_history')) || [];
+
+// Current Active Objects
+let logoImg = null; 
+
+// ── ELEMENTS ──
+const logoInput    = document.getElementById('logoInput');
+const logoZone     = document.getElementById('logoZone');
+const logoPreview  = document.getElementById('logoPreview');
+const logoThumb    = document.getElementById('logoThumb');
+const logoFileName = document.getElementById('logoFileName');
+const clearLogo    = document.getElementById('clearLogo');
+const logoHistorySelect = document.getElementById('logoHistorySelect');
+
+const photosInput  = document.getElementById('photosInput');
+const videosInput  = document.getElementById('videosInput');
+const pdfsInput    = document.getElementById('pdfsInput');
+const folderInput  = document.getElementById('folderInput');
+const dropEmpty    = document.getElementById('dropEmpty');
+const photoGrid    = document.getElementById('photoGrid');
+const photoScroll  = document.getElementById('photoScroll');
+const clearAllBtn  = document.getElementById('clearAllBtn');
+const tbCount      = document.getElementById('tbCount');
+const processCanvas = document.getElementById('processCanvas');
+const rCtx          = processCanvas.getContext('2d');
+const downloadBtn   = document.getElementById('downloadBtn');
+const progressWrap  = document.getElementById('progressWrap');
+const progressFill  = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+
+// Controls
+const sizeRange     = document.getElementById('sizeRange');
+const opacityRange  = document.getElementById('opacityRange');
+const sizeVal       = document.getElementById('sizeVal');
+const opacityVal    = document.getElementById('opacityVal');
+const sizeInput     = document.getElementById('sizeInput');
+const opacityInput  = document.getElementById('opacityInput');
+const sizeLabel     = document.getElementById('sizeLabel');
+
+// Text Controls
+const wmText        = document.getElementById('wmText');
+const wmColor       = document.getElementById('wmColor');
+const wmFont        = document.getElementById('wmFont');
+const textHistorySelect = document.getElementById('textHistorySelect');
+
+const vidWarning    = document.getElementById('vidWarning');
+
+// ── EDITABLE RANGE VALUES ──
+function setupEditableVal(rangeEl, valEl, inputEl, suffix, onUpdate) {
+  valEl.addEventListener('click', () => {
+    valEl.classList.add('hidden');
+    inputEl.classList.add('active');
+    inputEl.value = rangeEl.value;
+    inputEl.focus();
+    inputEl.select();
+  });
+  function commit() {
+    let v = parseInt(inputEl.value);
+    const mn = parseInt(rangeEl.min), mx = parseInt(rangeEl.max);
+    if (isNaN(v)) v = parseInt(rangeEl.value);
+    v = Math.max(mn, Math.min(mx, v));
+    rangeEl.value = v;
+    valEl.textContent = v + suffix;
+    valEl.classList.remove('hidden');
+    inputEl.classList.remove('active');
+    saveSettings(); // Save on change
+    onUpdate();
+  }
+  inputEl.addEventListener('blur', commit);
+  inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { valEl.classList.remove('hidden'); inputEl.classList.remove('active'); } });
+}
+
+setupEditableVal(sizeRange,    sizeVal,    sizeInput,    '%', () => refreshSheetPreview());
+setupEditableVal(opacityRange, opacityVal, opacityInput, '%', () => refreshSheetPreview());
+
+sizeRange.addEventListener('input',    () => { sizeVal.textContent    = sizeRange.value    + '%'; saveSettings(); refreshSheetPreview(); });
+opacityRange.addEventListener('input', () => { opacityVal.textContent = opacityRange.value + '%'; saveSettings(); refreshSheetPreview(); });
+
+wmText.addEventListener('input',  () => { saveSettings(); refreshSheetPreview(); });
+wmColor.addEventListener('input', () => { saveSettings(); refreshSheetPreview(); });
+wmFont.addEventListener('change', () => { saveSettings(); refreshSheetPreview(); });
+
+// ── SETTINGS MANAGEMENT ──
+function saveSettings() {
+  if (currentTab === 'logo') {
+    appSettings.logo.size = parseInt(sizeRange.value);
+    appSettings.logo.opacity = parseInt(opacityRange.value);
+  } else {
+    appSettings.text.size = parseInt(sizeRange.value);
+    appSettings.text.opacity = parseInt(opacityRange.value);
+    appSettings.text.color = wmColor.value;
+    appSettings.text.font = wmFont.value;
+    appSettings.text.text = wmText.value;
+  }
+  localStorage.setItem('markly_settings', JSON.stringify(appSettings));
+  updateUI();
+}
+
+function loadSettingsToUI() {
+  const s = currentTab === 'logo' ? appSettings.logo : appSettings.text;
+  
+  sizeRange.value = s.size;
+  sizeVal.textContent = s.size + '%';
+  sizeInput.value = s.size;
+  
+  opacityRange.value = s.opacity;
+  opacityVal.textContent = s.opacity + '%';
+  opacityInput.value = s.opacity;
+
+  if (currentTab === 'text') {
+    wmColor.value = s.color;
+    wmFont.value = s.font;
+    wmText.value = s.text;
+  }
+
+  // Update Position Grid UI
+  document.querySelectorAll('.pos-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.pos === s.pos);
+  });
+}
+
+function updatePositionGridUI() {
+  const s = currentTab === 'logo' ? appSettings.logo : appSettings.text;
+  document.querySelectorAll('.pos-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.pos === s.pos);
+  });
+}
+
+// ── WM MODE ──
+function switchWmTab(mode) {
+  currentTab = mode;
+  document.getElementById('tabLogo').classList.toggle('active', mode === 'logo');
+  document.getElementById('tabText').classList.toggle('active', mode === 'text');
+  
+  const logoSec = document.getElementById('logoWmSection');
+  const textSec = document.getElementById('textWmSection');
+  
+  if (mode === 'logo') {
+    logoSec.style.display = '';
+    textSec.classList.remove('visible');
+    sizeLabel.textContent = "Logo Size";
+    logoHistorySelect.style.display = logoHistory.length ? 'block' : 'none';
+  } else {
+    logoSec.style.display = 'none';
+    textSec.classList.add('visible');
+    sizeLabel.textContent = "Text Size";
+    textHistorySelect.style.display = textHistory.length ? 'block' : 'none';
+  }
+
+  loadSettingsToUI();
+  updatePositionGridUI();
+  refreshSheetPreview(); 
+  updateUI();
+}
+
+// ── POSITION ──
+document.getElementById('posGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.pos-btn');
+  if (!btn) return;
+  
+  // Update State
+  if (currentTab === 'logo') {
+    appSettings.logo.pos = btn.dataset.pos;
+  } else {
+    appSettings.text.pos = btn.dataset.pos;
+  }
+  saveSettings();
+  
+  // Update UI
+  document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  refreshSheetPreview();
+});
+
+// ── LOGO ──
+logoInput.addEventListener('change', e => loadLogo(e.target.files[0]));
+logoZone.addEventListener('dragover', e => { e.preventDefault(); logoZone.style.borderColor = 'var(--accent)'; });
+logoZone.addEventListener('dragleave', () => logoZone.style.borderColor = '');
+logoZone.addEventListener('drop', e => {
+  e.preventDefault(); logoZone.style.borderColor = '';
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadLogo(f);
+});
+clearLogo.addEventListener('click', e => {
+  e.preventDefault();
+  logoImg = null; logoInput.value = '';
+  logoPreview.classList.remove('visible');
+  logoZone.style.display = 'block';
+  refreshSheetPreview(); updateUI();
+});
+
+function loadLogo(file) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    logoImg = img;
+    logoThumb.src = url;
+    logoFileName.textContent = file.name;
+    logoPreview.classList.add('visible');
+    logoZone.style.display = 'none';
+    
+    // Add to history
+    addToHistory('logo', file.name, url);
+    refreshSheetPreview(); updateUI();
+  };
+  img.src = url;
+}
+
+// ── HISTORY MANAGEMENT ──
+function addToHistory(type, name, dataUrl) {
+  const history = type === 'logo' ? logoHistory : textHistory;
+  // Remove duplicate if exists
+  const existingIdx = history.findIndex(h => h.name === name || (type==='text' && h.text === name));
+  if (existingIdx > -1) history.splice(existingIdx, 1);
+  
+  // Add new to top
+  history.unshift({ name, dataUrl, text: type==='text'?name:null });
+  
+  // Limit to 10
+  if (history.length > 10) history.pop();
+  
+  // Save
+  if (type === 'logo') {
+    logoHistory = history;
+    localStorage.setItem('markly_logo_history', JSON.stringify(logoHistory));
+    renderHistorySelect('logo');
+  } else {
+    textHistory = history;
+    localStorage.setItem('markly_text_history', JSON.stringify(textHistory));
+    renderHistorySelect('text');
+  }
+}
+
+function renderHistorySelect(type) {
+  const select = type === 'logo' ? logoHistorySelect : textHistorySelect;
+  const history = type === 'logo' ? logoHistory : textHistory;
+  
+  select.innerHTML = '<option value="" disabled selected>Recent...</option>';
+  history.forEach((item, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = type === 'logo' ? item.name : (item.text.substring(0, 20) + (item.text.length>20?'...':''));
+    select.appendChild(opt);
+  });
+  
+  select.style.display = history.length ? 'block' : 'none';
+  select.onchange = () => {
+    const item = history[select.value];
+    if (type === 'logo') {
+      const img = new Image();
+      img.onload = () => {
+        logoImg = img;
+        logoThumb.src = item.dataUrl;
+        logoFileName.textContent = item.name;
+        logoPreview.classList.add('visible');
+        logoZone.style.display = 'none';
+        refreshSheetPreview(); updateUI();
+      };
+      img.src = item.dataUrl;
+    } else {
+      wmText.value = item.text;
+      saveSettings();
+      refreshSheetPreview();
+    }
+  };
+}
+
+// ── FILE LOADING ──
+photosInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+videosInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+pdfsInput.addEventListener('change',   e => addFiles(Array.from(e.target.files)));
+folderInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+clearAllBtn.addEventListener('click', () => { files = []; sheetIdx = null; renderGrid(); updateUI(); });
+
+photoScroll.addEventListener('dragover', e => { e.preventDefault(); dropEmpty.classList.add('drag-over'); });
+photoScroll.addEventListener('dragleave', e => { if (!photoScroll.contains(e.relatedTarget)) dropEmpty.classList.remove('drag-over'); });
+photoScroll.addEventListener('drop', e => { e.preventDefault(); dropEmpty.classList.remove('drag-over'); addFiles(Array.from(e.dataTransfer.files)); });
+
+function getFileType(file) {
+  if (file.type.startsWith('image/')) return 'img';
+  if (file.type.startsWith('video/')) return 'vid';
+  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return 'pdf';
+  return null;
+}
+
+function addFiles(rawFiles) {
+  const supported = rawFiles.filter(f => getFileType(f) !== null);
+  if (!supported.length) { showToast('No supported files found'); return; }
+  supported.forEach(file => {
+    const type = getFileType(file);
+    const url = type !== 'pdf' ? URL.createObjectURL(file) : null;
+    files.push({ file, url, name: file.name, type, thumb: null });
+  });
+  renderGrid();
+  updateUI();
+  generateThumbs();
+}
+
+async function generateThumbs() {
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    if (f.thumb || f.type === 'vid') continue;
+    if (f.type === 'img') {
+      f.thumb = f.url;
+      updateThumbEl(i);
+    } else if (f.type === 'pdf') {
+      try {
+        const ab = await f.file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+        const page = await pdf.getPage(1);
+        const vp = page.getViewport({ scale: 0.5 });
+        const c = document.createElement('canvas');
+        c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        f.thumb = c.toDataURL();
+        updateThumbEl(i);
+      } catch(e) {}
+    }
+  }
+}
+
+function updateThumbEl(i) {
+  const el = photoGrid.querySelector(`[data-idx="${i}"]`);
+  if (!el) return;
+  const f = files[i];
+  if (f.thumb) {
+    el.innerHTML = `
+      <img src="${f.thumb}" alt="${f.name}">
+      <span class="type-badge ${f.type}">${f.type.toUpperCase()}</span>
+      <button class="rm" data-rm="${i}">✕</button>
+      <div class="preview-icon-overlay"><span>👁</span></div>
+    `;
+  }
+}
+
+function renderGrid() {
+  if (!files.length) {
+    dropEmpty.style.display = '';
+    photoGrid.style.display = 'none';
+    photoGrid.innerHTML = '';
+    return;
+  }
+  dropEmpty.style.display = 'none';
+  photoGrid.style.display = '';
+  photoGrid.innerHTML = files.map((f, i) => {
+    let inner = '';
+    if (f.thumb) {
+      inner = `<img src="${f.thumb}" alt="${f.name}"><div class="preview-icon-overlay"><span>👁</span></div>`;
+    } else if (f.type === 'vid') {
+      inner = `<div class="vid-thumb"><span>🎬</span><p>${f.name.split('.').pop().toUpperCase()}</p></div><div class="preview-icon-overlay"><span>👁</span></div>`;
+    } else if (f.type === 'pdf') {
+      inner = `<div class="pdf-thumb"><span>📄</span><p>PDF</p></div><div class="preview-icon-overlay"><span>👁</span></div>`;
+    } else {
+      inner = `<div class="pdf-thumb"><span>🖼️</span><p>${f.name.split('.').pop().toUpperCase()}</p></div>`;
+    }
+    return `<div class="photo-item" data-idx="${i}">
+      ${inner}
+      <span class="type-badge ${f.type}">${f.type.toUpperCase()}</span>
+      <button class="rm" data-rm="${i}">✕</button>
+    </div>`;
+  }).join('');
+
+  photoGrid.addEventListener('click', gridClick, { once: true });
+  photoGrid.onclick = gridClick;
+}
+
+function gridClick(e) {
+  const rm = e.target.closest('[data-rm]');
+  if (rm) {
+    const i = parseInt(rm.dataset.rm);
+    files.splice(i, 1);
+    renderGrid(); updateUI();
+    return;
+  }
+  const item = e.target.closest('.photo-item');
+  if (item) {
+    const i = parseInt(item.dataset.idx);
+    openSheet(i);
+  }
+}
+
+// ── UI UPDATE ──
+function updateUI() {
+  const imgs = files.filter(f => f.type === 'img').length;
+  const vids = files.filter(f => f.type === 'vid').length;
+  const pdfs = files.filter(f => f.type === 'pdf').length;
+  document.getElementById('hImg').innerHTML = `🖼️ <strong>${imgs}</strong>`;
+  document.getElementById('hVid').innerHTML = `🎬 <strong>${vids}</strong>`;
+  document.getElementById('hPdf').innerHTML = `📄 <strong>${pdfs}</strong>`;
+  tbCount.textContent = files.length ? `${files.length} file${files.length > 1 ? 's' : ''}` : '';
+  
+  const hasWm = currentTab === 'text' ? wmText.value.trim().length > 0 : logoImg !== null;
+  downloadBtn.disabled = files.length === 0 || !hasWm;
+  vidWarning.classList.toggle('visible', vids > 0);
+}
+
+// ── WATERMARK DRAW ──
+function getWmSettings() {
+  return {
+    size:    parseInt(sizeRange.value) / 100,
+    opacity: parseInt(opacityRange.value) / 100,
+  };
+}
+
+function drawWatermark(ctx, canvasW, canvasH) {
+  const { size, opacity } = getWmSettings();
+  const pos = currentTab === 'logo' ? appSettings.logo.pos : appSettings.text.pos;
+  
+  ctx.save();
+  ctx.globalAlpha = opacity;
+
+  const paddingPercent = 0.03; // 3% padding
+  const padX = canvasW * paddingPercent;
+  const padY = canvasH * paddingPercent;
+
+  if (currentTab === 'logo' && logoImg) {
+    const wmW = canvasW * size;
+    const wmH = (logoImg.height / logoImg.width) * wmW;
+    const [x, y] = calcPos(pos, canvasW, canvasH, wmW, wmH, padX, padY);
+    ctx.drawImage(logoImg, x, y, wmW, wmH);
+  } else if (currentTab === 'text' && wmText.value.trim()) {
+    const fontSize = Math.round(canvasW * size * 0.5);
+    ctx.font = `${fontSize}px ${wmFont.value}`;
+    ctx.fillStyle = wmColor.value;
+    ctx.textBaseline = 'top';
+    const metrics = ctx.measureText(wmText.value);
+    const tw = metrics.width;
+    const th = fontSize * 1.2;
+    const [x, y] = calcPos(pos, canvasW, canvasH, tw, th, padX, padY);
+    ctx.fillText(wmText.value, x, y);
+  }
+  ctx.restore();
+}
+
+function calcPos(pos, cw, ch, ww, wh, px, py) {
+  const positions = {
+    'top-left':      [px, py],
+    'top-center':    [(cw - ww) / 2, py],
+    'top-right':     [cw - ww - px, py],
+    'middle-left':   [px, (ch - wh) / 2],
+    'center':        [(cw - ww) / 2, (ch - wh) / 2],
+    'middle-right':  [cw - ww - px, (ch - wh) / 2],
+    'bottom-left':   [px, ch - wh - py],
+    'bottom-center': [(cw - ww) / 2, ch - wh - py],
+    'bottom-right':  [cw - ww - px, ch - wh - py],
+  };
+  return positions[pos] || positions['bottom-right'];
+}
+
+// ── BOTTOM SHEET ──
+function openSheet(idx) {
+  sheetIdx = idx;
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('bottomSheet').classList.add('open');
+  renderSheetPreview();
+}
+
+function closeSheet() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('bottomSheet').classList.remove('open');
+  const v = document.getElementById('sheetVideo');
+  v.pause(); v.src = '';
+  document.getElementById('sheetVideoWrap').style.display = 'none';
+  document.getElementById('sheetCanvas').style.display = 'none';
+  document.getElementById('sheetEmpty').style.display = '';
+}
+
+document.getElementById('sheetCloseBtn').addEventListener('click', closeSheet);
+
+document.getElementById('sheetPrev').addEventListener('click', () => {
+  if (sheetIdx > 0) { sheetIdx--; renderSheetPreview(); }
+});
+document.getElementById('sheetNext').addEventListener('click', () => {
+  if (sheetIdx < files.length - 1) { sheetIdx++; renderSheetPreview(); }
+});
+document.getElementById('sheetDlBtn').addEventListener('click', () => {
+  if (sheetIdx === null) return;
+  downloadSingle(sheetIdx);
+});
+
+function updateSheetNav() {
+  if (sheetIdx === null) return;
+  document.getElementById('sheetPrev').disabled = sheetIdx === 0;
+  document.getElementById('sheetNext').disabled = sheetIdx === files.length - 1;
+  document.getElementById('sheetNavLabel').textContent = `${sheetIdx + 1} / ${files.length}`;
+}
+
+async function renderSheetPreview() {
+  if (sheetIdx === null || !files[sheetIdx]) return;
+  const f = files[sheetIdx];
+  updateSheetNav();
+
+  const badgeColors = { img: '#0369a1', vid: '#7c3aed', pdf: '#dc2626' };
+  const sheetBadge = document.getElementById('sheetBadge');
+  sheetBadge.textContent = f.type.toUpperCase();
+  sheetBadge.style.background = badgeColors[f.type] || '#444';
+  document.getElementById('sheetFilename').textContent = f.name;
+
+  const canvas  = document.getElementById('sheetCanvas');
+  const ctx     = canvas.getContext('2d');
+  const empty   = document.getElementById('sheetEmpty');
+  const vidWrap = document.getElementById('sheetVideoWrap');
+  const sheetVideo = document.getElementById('sheetVideo');
+
+  canvas.style.display = 'none';
+  vidWrap.style.display = 'none';
+  empty.style.display = 'none';
+
+  const hasWm = currentTab === 'text' ? wmText.value.trim().length > 0 : logoImg !== null;
+
+  if (f.type === 'img') {
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.drawImage(img, 0, 0);
+      if (hasWm) drawWatermark(ctx, canvas.width, canvas.height);
+      canvas.style.display = 'block';
+    };
+    img.src = f.url;
+
+  } else if (f.type === 'vid') {
+    sheetVideo.src = f.url;
+    vidWrap.style.display = 'block';
+    if (hasWm) {
+      sheetVideo.addEventListener('loadedmetadata', function once() {
+        sheetVideo.removeEventListener('loadedmetadata', once);
+        const wmCanvas = document.getElementById('sheetVideoWmCanvas');
+        wmCanvas.width  = sheetVideo.videoWidth  || sheetVideo.offsetWidth;
+        wmCanvas.height = sheetVideo.videoHeight || sheetVideo.offsetHeight;
+        wmCanvas.style.width  = '100%';
+        wmCanvas.style.height = '100%';
+        const wCtx = wmCanvas.getContext('2d');
+        wCtx.clearRect(0, 0, wmCanvas.width, wmCanvas.height);
+        drawWatermark(wCtx, wmCanvas.width, wmCanvas.height);
+      });
+    }
+
+  } else if (f.type === 'pdf') {
+    try {
+      const ab = await f.file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+      const page = await pdf.getPage(1);
+      const vp = page.getViewport({ scale: 2 });
+      canvas.width = vp.width; canvas.height = vp.height;
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      if (hasWm) drawWatermark(ctx, canvas.width, canvas.height);
+      canvas.style.display = 'block';
+    } catch(e) { empty.style.display = ''; }
+  } else {
+    empty.style.display = '';
+  }
+}
+
+function refreshSheetPreview() {
+  if (document.getElementById('bottomSheet').classList.contains('open')) {
+    renderSheetPreview();
+  }
+}
+
+// ── DOWNLOAD SINGLE ──
+async function downloadSingle(idx) {
+  const f = files[idx];
+  const hasWm = currentTab === 'text' ? wmText.value.trim().length > 0 : logoImg !== null;
+  if (!hasWm) { showToast('Add a watermark first'); return; }
+
+  if (f.type === 'img') {
+    const img = new Image();
+    img.onload = () => {
+      processCanvas.width = img.naturalWidth;
+      processCanvas.height = img.naturalHeight;
+      rCtx.drawImage(img, 0, 0);
+      drawWatermark(rCtx, processCanvas.width, processCanvas.height);
+      const ext = f.name.split('.').pop().toLowerCase();
+      const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+      const dataUrl = processCanvas.toDataURL(mime, 0.95);
+      triggerDownload(dataUrl, 'wm_' + f.name);
+      showToast('✓ Saved: ' + f.name);
+    };
+    img.src = f.url;
+  } else if (f.type === 'pdf') {
+    showToast('Saving PDF…');
+    await processPdfDownload(f);
+  } else if (f.type === 'vid') {
+    showToast('Processing Video...');
+    await processVideoDownload(f);
+  }
+}
+
+// ── VIDEO PROCESSING (FIXED) ──
+async function processVideoDownload(fileObj) {
+  const video = document.createElement('video');
+  video.src = fileObj.url;
+  video.muted = true;
+  video.playsInline = true;
+  
+  await new Promise(resolve => video.onloadedmetadata = resolve);
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  
+  const stream = canvas.captureStream(30); // 30 FPS
+  const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+  const chunks = [];
+  
+  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, 'wm_' + fileObj.name.replace(/\.[^/.]+$/, "") + ".webm");
+    showToast('✓ Video Saved');
+  };
+  
+  recorder.start();
+  video.play();
+  
+  const drawFrame = () => {
+    if (video.paused || video.ended) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    drawWatermark(ctx, canvas.width, canvas.height);
+    requestAnimationFrame(drawFrame);
+  };
+  
+  video.onplay = drawFrame;
+  video.onended = () => recorder.stop();
+}
+
+// ── DOWNLOAD ALL ──
+downloadBtn.addEventListener('click', async () => {
+  const hasWm = currentTab === 'text' ? wmText.value.trim().length > 0 : logoImg !== null;
+  if (!hasWm) { showToast('Add a watermark first'); return; }
+  downloadBtn.disabled = true;
+  progressWrap.style.display = 'block';
+  let done = 0;
+  for (const f of files) {
+    progressLabel.textContent = `Processing: ${f.name}`;
+    progressFill.style.width = Math.round((done / files.length) * 100) + '%';
+    if (f.type === 'img') {
+      await new Promise(res => {
+        const img = new Image();
+        img.onload = () => {
+          processCanvas.width = img.naturalWidth;
+          processCanvas.height = img.naturalHeight;
+          rCtx.drawImage(img, 0, 0);
+          drawWatermark(rCtx, processCanvas.width, processCanvas.height);
+          const ext = f.name.split('.').pop().toLowerCase();
+          const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+          const dataUrl = processCanvas.toDataURL(mime, 0.95);
+          triggerDownload(dataUrl, 'wm_' + f.name);
+          res();
+        };
+        img.src = f.url;
+      });
+    } else if (f.type === 'pdf') {
+      await processPdfDownload(f);
+    } else if (f.type === 'vid') {
+       // Skip videos in bulk download for performance, or use same logic as single
+       showToast('⚠️ Video skipped in bulk (use single save)');
+    }
+    done++;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  progressFill.style.width = '100%';
+  progressLabel.textContent = 'Done!';
+  setTimeout(() => {
+    progressWrap.style.display = 'none';
+    progressFill.style.width = '0%';
+    downloadBtn.disabled = false;
+  }, 1800);
+  showToast(`✓ ${done} file${done > 1 ? 's' : ''} downloaded`);
+});
+
+async function processPdfDownload(f) {
+  try {
+    const ab = await f.file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ compress: true });
+    let first = true;
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const vp = page.getViewport({ scale: 2 });
+      processCanvas.width = vp.width; processCanvas.height = vp.height;
+      await page.render({ canvasContext: rCtx, viewport: vp }).promise;
+      drawWatermark(rCtx, processCanvas.width, processCanvas.height);
+      const imgData = processCanvas.toDataURL('image/jpeg', 0.95);
+      const w = doc.internal.pageSize.getWidth();
+      const h = (vp.height / vp.width) * w;
+      if (!first) doc.addPage(); first = false;
+      doc.addImage(imgData, 'JPEG', 0, 0, w, h);
+    }
+    doc.save('wm_' + f.name);
+    showToast('✓ PDF saved: ' + f.name);
+  } catch(e) {
+    showToast('PDF error: ' + e.message);
+  }
+}
+
+function triggerDownload(dataUrl, name) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = name;
+  a.click();
+}
+
+// Initialize
+renderHistorySelect('logo');
+renderHistorySelect('text');
+switchWmTab('logo'); // Load default tab settings
+updateUI();
+</script>
+</body>
+</html>
